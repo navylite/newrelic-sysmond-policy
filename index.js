@@ -22,19 +22,31 @@ var yargs = require('yargs')
                 .default('h', os.hostname())
                 .argv;
 
+function alertOnStatus(code, cb) {
+    switch (code) {
+        case 401: cb(new Error("Invalid or missing NewRelic API code"));
+        case 403: cb(new Error("New Relic API access has not been enabled for your account"));
+        case 404: cb(new Error("No alert policy found with the given ID"));
+        case 422: cb(new Error("Validation error occurred when updating the alert policy"));
+        case 500: cb(new Error("A server error occured, please contact New Relic support"));
+        default: cb(new Error("Unknown response code " + code));
+    }
+}
+
 function getNRServerIdByName(key, name, cb) {
     request(
         {
-            url: "https://api.newrelic.com/v2/servers.json",
-            qs: {
-                "filter[name]": encodeURIComponent(name)
-            },
+            url: "https://api.newrelic.com/v2/servers.json?filter[name]=" + name.replace(/\s/,'+','g'),
             headers: {
                 "X-Api-Key": key
             },
             json: true
         },
         function(err, response, body) {
+            if (response.statusCode != 200) {
+                alertOnStatus(response.statusCode, cb);
+                return;
+            }
             if (body && body.servers && body.servers[0]) {
                 body.servers = body.servers.filter(function(server) {return server.host == name});
                 if (body.servers.length == 1)
@@ -47,20 +59,22 @@ function getNRServerIdByName(key, name, cb) {
     );
 }
 
+
+
 function getNRPolicyIdByName(key, name, cb) {
     request(
         {
-            url: "https://api.newrelic.com/v2/alert_policies.json",
-            qs: {
-                "filter[name]": encodeURIComponent(name),
-                "filter[type]": "server",
-            },
+            url: "https://api.newrelic.com/v2/alert_policies.json?filter[type]=server&filter[name]=" + name.replace(/\s/,'+','g'),
             headers: {
                 "X-Api-Key": key
             },
             json: true
         },
         function(err, response, body) {
+            if (response.statusCode != 200) {
+                alertOnStatus(response.statusCode, cb);
+                return;
+            }
             if (body && body.alert_policies && body.alert_policies[0]) {
                 body.alert_policies = body.alert_policies.filter(function(policy) {return policy.name == name});
                 if (body.alert_policies.length == 1)
@@ -85,6 +99,10 @@ function setNRPolicyServers(key, policy_id, servers, cb) {
             json: body
         },
         function(err, response, body) {
+            if (response.statusCode != 200) {
+                alertOnStatus(response.statusCode, cb);
+                return;
+            }
             if (body && body.alert_policy && body.alert_policy.id == policy_id)
                 cb(null);
             else

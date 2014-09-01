@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Helper utility to assign a server to a particular server policy at NewRelic",
   "main": "index.js",
+  "bin": "./index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

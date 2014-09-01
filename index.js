@@ -119,15 +119,21 @@ async.parallel({
 }, function(err, res) {
     if (err) {
         console.error(err);
-        return;
+        process.exit(-1);
     }
     if (res.policy.servers.indexOf(res.server.id) == -1) {
         res.policy.servers.push(res.server.id);
         setNRPolicyServers(yargs['api-key'], res.policy.id, res.policy.servers, function(err) {
-            if (err) console.error(err)
-            else console.log("[OK] Server " + yargs['host'] + " added to policy " + yargs['policy']);
+            if (err) {
+                console.error(err);
+                process.exit(-1);
+            }
+            console.log("[OK] Server " + yargs['host'] + " added to policy " + yargs['policy']);
+            process.exit(0);
         });
     }
-    else
+    else {
         console.log("[OK] Server " + yargs['host'] + " already in policy " + yargs['policy'])
+        process.exit(0);
+    }
 });

@@ -24,7 +24,7 @@ Note that you do not need to add to one policy and remove from another - NewReli
 
 ## License
 
-Copyright 2014 Issac Goldstand <margol@beamartyr.net>
+Copyright 2014 Issac Goldstand 
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

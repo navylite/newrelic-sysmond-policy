@@ -8,10 +8,17 @@ var yargs = require('yargs')
                 .usage('Adds a server to a NewRelic Server policy via the API.')
                 .example('$0 --api-key <newrelic-api-key> --policy My Server Policy --host 123.45.67.89', 'Adds host 123.45.67.89 to policy "My Server Policy"')
                 .alias('k', 'api-key')
+                .string('k')
+                .describe('k', 'NewRelic API Key')
                 .demand('k', 'You must specify a NewRelic API key.  See https://docs.newrelic.com/docs/apm/apis/requirements/api-key#creating')
                 .alias('p', 'policy')
+                .string('p')
+                .describe('p', 'NewRelic server policy name')
                 .demand('p', 'You must specify a valid Server Monitoring policy name')
                 .alias('h', 'host')
+                .string('h')
+                .describe('h', 'Hostname of server [defaults to local hostname()]')
+                .demand('h', 'You must specify a valid hostname')
                 .default('h', os.hostname())
                 .argv;
 
@@ -28,12 +35,13 @@ function getNRServerIdByName(key, name, cb) {
             json: true
         },
         function(err, response, body) {
-            if (body && body.servers && body.servers[0])
+            if (body && body.servers && body.servers[0]) {
+                body.servers = body.servers.filter(function(server) {return server.host == name});
                 if (body.servers.length == 1)
                     cb(null, {id: body.servers[0].id});
                 else
                     cb(new Error("Received " + body.servers.length + " servers, while expecting exactly 1"));
-            else
+            } else
                 cb(new Error("Unknown server: " + name));
         }
     );
@@ -53,12 +61,13 @@ function getNRPolicyIdByName(key, name, cb) {
             json: true
         },
         function(err, response, body) {
-            if (body && body.alert_policies && body.alert_policies[0])
+            if (body && body.alert_policies && body.alert_policies[0]) {
+                body.alert_policies = body.alert_policies.filter(function(policy) {return policy.name == name});
                 if (body.alert_policies.length == 1)
                     cb(null, {id: body.alert_policies[0].id, servers: body.alert_policies[0].links.servers});
                 else
                     cb(new Error("Received " + body.alert_policies.length + " policies, while expecting exactly 1"));
-            else
+            } else
                 cb(new Error("Unknown policy: " + name));
         }
     );
